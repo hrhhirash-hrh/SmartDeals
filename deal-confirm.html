@@ -1,0 +1,69 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Confirm Deal</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="site.css">
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h2 id="productName" style="color:var(--accent)">Confirm Deal</h2>
+
+      <input id="customerName" class="input" placeholder="Your Name">
+      <input id="phone" class="input" placeholder="Phone number" style="margin-top:8px;">
+      <textarea id="address" class="input" placeholder="Address" style="margin-top:8px;"></textarea>
+
+      <div style="margin-top:12px;">
+        <button id="submitBtn" class="btn" onclick="submitOrder()">Submit Order ✅</button>
+      </div>
+
+      <p id="msg" class="center small"></p>
+    </div>
+  </div>
+
+<script>
+const API_URL = "REPLACE_WITH_YOUR_APPS_SCRIPT_URL";
+
+const params = new URLSearchParams(window.location.search);
+const productId = decodeURIComponent(params.get('id') || '');
+const productName = decodeURIComponent(params.get('name') || '');
+
+document.getElementById('productName').innerHTML = `Confirm: <strong style="color:#fff">${productName}</strong>`;
+
+async function submitOrder(){
+  const nm = document.getElementById('customerName').value.trim();
+  const ph = document.getElementById('phone').value.trim();
+  const addr = document.getElementById('address').value.trim();
+  if(!nm || !ph){ alert('Name and phone required'); return; }
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.innerText = 'Submitting...';
+
+  try{
+    const res = await fetch(API_URL, {
+      method:'POST',
+      body: JSON.stringify({
+        action:'submitOrder',
+        productId, productName, customerName: nm, phone: ph, address: addr
+      })
+    });
+    const data = await res.json();
+    if(data && data.success){
+      alert('Order submitted ✅');
+      window.location.href = 'Deals.html'; // NOTE: keep case same as filename
+    } else {
+      alert('Failed to submit');
+      btn.disabled=false;
+      btn.innerText='Submit Order ✅';
+    }
+  }catch(e){
+    alert('Network error');
+    btn.disabled=false;
+    btn.innerText='Submit Order ✅';
+  }
+}
+</script>
+</body>
+</html>

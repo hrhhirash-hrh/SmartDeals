@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Login</title>
+<link rel="stylesheet" href="login.css">
+</head>
+<body>
+
+<div class="login-container">
+  <h2>Admin Login</h2>
+  <input type="text" id="username" placeholder="Username" required>
+  <input type="password" id="password" placeholder="Password" required>
+  <button id="loginBtn">Login</button>
+  <p id="message"></p>
+</div>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbwInby3LaeNWiXCophyJWMcpkkJNNcDzaNA64iDeEjz9czxaR39070sSmCG4jkYSB1_/exec"; // 🔹 Replace this
+
+document.getElementById("loginBtn").addEventListener("click", async () => {
+  const username = document.getElementById("username").value.trim();
+  const password = document.getElementById("password").value.trim();
+  const msg = document.getElementById("message");
+
+  if (!username || !password) {
+    msg.textContent = "Please enter username and password.";
+    msg.style.color = "red";
+    return;
+  }
+
+  msg.textContent = "Checking...";
+  msg.style.color = "gray";
+
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({ username, password }),
+      headers: { "Content-Type": "application/json" }
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      msg.textContent = "✅ Login successful!";
+      msg.style.color = "green";
+      setTimeout(() => {
+        window.location.href = "admin_orders.html";
+      }, 1000);
+    } else {
+      msg.textContent = "❌ Invalid username or password.";
+      msg.style.color = "red";
+    }
+  } catch (error) {
+    msg.textContent = "⚠️ Error connecting to server.";
+    msg.style.color = "red";
+  }
+});
+</script>
+
+</body>
+</html>

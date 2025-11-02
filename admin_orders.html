@@ -1,0 +1,95 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Admin - Orders</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="site.css">
+</head>
+<body>
+  <div class="container">
+    <div id="loginCard" class="card" style="max-width:420px;margin:0 auto;">
+      <h2 style="color:var(--accent)">Admin Login</h2>
+      <input id="adminUser" class="input" placeholder="Username">
+      <input id="adminPass" class="input" placeholder="Password" type="password" style="margin-top:8px;">
+      <div style="margin-top:12px;"><button class="btn" onclick="login()">Login</button></div>
+      <p id="loginMsg" class="center small"></p>
+    </div>
+
+    <div id="ordersCard" class="card" style="display:none;margin-top:20px;">
+      <h2 style="color:var(--accent)">All Orders</h2>
+      <div id="ordersLoader" class="center">⏳ Loading orders...</div>
+      <table id="ordersTable" class="table" style="display:none;">
+        <thead><tr><th>Order</th><th>Product</th><th>Customer</th><th>Phone</th><th>Address</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+<script>
+const API_URL = "REPLACE_WITH_YOUR_APPS_SCRIPT_URL";
+
+async function login(){
+  const user = document.getElementById('adminUser').value.trim();
+  const pass = document.getElementById('adminPass').value.trim();
+  if(!user||!pass){ alert('Fill both'); return; }
+  document.getElementById('loginMsg').innerText='Logging in...';
+  try{
+    const res = await fetch(API_URL, {
+      method:'POST', body: JSON.stringify({ action:'login', username:user, password:pass })
+    });
+    const data = await res.json();
+    if(data && data.success && data.token){
+      localStorage.setItem('admin_token', data.token);
+      document.getElementById('loginCard').style.display='none';
+      document.getElementById('ordersCard').style.display='block';
+      loadOrders();
+    } else {
+      document.getElementById('loginMsg').innerText = 'Invalid credentials';
+    }
+  }catch(e){
+    document.getElementById('loginMsg').innerText = 'Network error';
+    console.error(e);
+  }
+}
+
+async function loadOrders(){
+  document.getElementById('ordersTable').style.display='none';
+  document.getElementById('ordersLoader').style.display='block';
+  const token = localStorage.getItem('admin_token') || '';
+  try{
+    const res = await fetch(API_URL, { method:'POST', body: JSON.stringify({ action:'getOrders', token }) });
+    const data = await res.json();
+    if(data && data.error==='Unauthorized'){ alert('Session expired'); localStorage.removeItem('admin_token'); location.reload(); return; }
+    const tbody = document.querySelector('#ordersTable tbody');
+    tbody.innerHTML = '';
+    if(!Array.isArray(data) || data.length===0){
+      document.getElementById('ordersLoader').innerText = 'No orders';
+    } else {
+      data.forEach(o=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${o.orderId}</td><td>${o.productName}</td><td>${o.customerName}</td><td>${o.phone}</td><td>${o.address}</td><td>${o.status}</td>
+          <td><button class="btn" onclick="updateStatus(this,'${o.orderId}','Delivered')">Delivered</button></td>`;
+        tbody.appendChild(tr);
+      });
+      document.getElementById('ordersLoader').style.display='none';
+      document.getElementById('ordersTable').style.display='table';
+    }
+  }catch(e){
+    document.getElementById('ordersLoader').innerText = 'Failed to load';
+    console.error(e);
+  }
+}
+
+async function updateStatus(btn, orderId, newStatus){
+  btn.disabled = true; const orig = btn.innerText; btn.innerText='Updating...';
+  const token = localStorage.getItem('admin_token') || '';
+  try{
+    const res = await fetch(API_URL, { method:'POST', body: JSON.stringify({ action:'updateStatus', orderId, status:newStatus, token }) });
+    const data = await res.json();
+    if(data && data.success){ btn.innerText='✅'; setTimeout(()=>loadOrders(),600); } else { alert('Failed'); btn.disabled=false; btn.innerText=orig; }
+  }catch(e){ alert('Error'); btn.disabled=false; btn.innerText=orig; }
+}
+</script>
+</body>
+</html>

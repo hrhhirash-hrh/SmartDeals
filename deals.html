@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Deals</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="site.css">
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1 style="color:var(--accent)">Available Deals 🔥</h1>
+      <div id="productList" class="grid">
+        <!-- products injected here -->
+      </div>
+      <p class="center small" style="margin-top:14px;">Tip: Click Accept to proceed</p>
+    </div>
+  </div>
+
+<script>
+const API_URL = "REPLACE_WITH_YOUR_APPS_SCRIPT_URL"; // <- replace after backend deploy
+
+async function loadDeals(){
+  const list = document.getElementById('productList');
+  list.innerHTML = '<div class="center">⏳ Loading deals...</div>';
+  try {
+    const res = await fetch(API_URL + '?action=getProducts');
+    const data = await res.json();
+    if(!Array.isArray(data) || data.length===0){
+      list.innerHTML = '<div class="center">No deals found</div>';
+      return;
+    }
+    list.innerHTML = '';
+    data.forEach(p=>{
+      list.innerHTML += `
+        <div class="product">
+          <h3>${escapeHtml(p.productName)}</h3>
+          <div class="small">Model: ${escapeHtml(p.model || '-')}</div>
+          <div class="small">Price: ₹${escapeHtml(p.bookingPrice || '0')}</div>
+          <div class="small">Qty: ${escapeHtml(p.quantity || '0')}</div>
+          <div style="margin-top:10px;">
+            ${p.quantity>0 ? `<button class="btn" onclick="acceptDeal('${encodeURIComponent(p.id)}','${encodeURIComponent(p.productName)}')">Accept Deal</button>` 
+                          : `<button class="btn ghost" disabled>Sold out</button>`}
+          </div>
+        </div>`;
+    });
+  } catch(err){
+    list.innerHTML = '<div class="center">Failed to load deals</div>';
+    console.error(err);
+  }
+}
+function acceptDeal(id,name){
+  // navigate with parameters (encoded)
+  window.location.href = `deal-confirm.html?id=${id}&name=${name}`;
+}
+function escapeHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+loadDeals();
+</script>
+</body>
+</html>
